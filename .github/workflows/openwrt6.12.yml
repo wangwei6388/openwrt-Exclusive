@@ -71,9 +71,6 @@ jobs:
         sudo chown $USER:$GROUPS /mnt/workdir
         df -hT
 
-    - name: TG推送
-      run: curl "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=🔥X86-openwrt6.12自用版固件开刷编译，请耐心等待！"
-
     - name: 下载固件源码
       working-directory: /mnt/workdir
       run: |
@@ -162,16 +159,6 @@ jobs:
       with:
         name: OpenWrt_6.12D${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
-
-
-    - name: 上传固件到WT网盘
-      id: wetransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL https://raw.githubusercontent.com/Mikubill/transfer/master/install.sh | sh
-        ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
-        echo "::warning file=wetransfer.com::$(cat wetransfer.log | grep https)"
-        echo "url=$(cat wetransfer.log | grep https | cut -f3 -d" ")" >> $GITHUB_OUTPUT
     
     - name: 发布至release
       id: release
@@ -183,13 +170,6 @@ jobs:
         tag: ${{ env.TAG_TIME }}
         commit: main
         token: ${{ secrets.RELEASE_TOKEN }}
-        body: |
-          功能介绍：含Docker、Passwall、MosDNS、lucky、定时设置等插件。
-          [固件源码](https://github.com/coolsnowwolf/lede)
-          由衷感谢所有为openwrt无私奉献的大佬们
-          📥 固件下载
-          🔗 [国外WT网盘](${{ steps.wetransfer.outputs.url }})
-        artifacts: ${{ env.FIRMWARE }}/*
 
     - name: 清理旧的workflow
       uses: Mattraks/delete-workflow-runs@v2
@@ -207,5 +187,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         
-    - name: TG推送
-      run: curl "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=🅰️恭喜主人X86-openwrt6.12自用版固件编译完成！🎉%0A⏰编译时间：${{ env.DATE }}%0A📥下载地址：https://github.com/firkerword/openwrt-Exclusive/releases/tag/${{ env.TAG_TIME }}"
+  
